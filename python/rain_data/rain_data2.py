@@ -16,97 +16,92 @@ def get_list_data(file):
                 string_data = spltfile[line[0] + 1:]
         data = []
         for i in string_data:
-            data.append(i.split())
             data_row = i.split()
-            data = datetime.datetime.strptime(data_row[0], '%d-%b-%Y')
-
+            date = datetime.datetime.strptime(data_row[0], '%d-%b-%Y')
+            data_row = [x.replace('-', '0') for x in data_row]
+            daily_total = int(data_row[1])
+            hourly_data = data_row[2:]
+            clean_hourly_data = []
+            for x in hourly_data:
+                clean_hourly_data.append(x.replace('-', '0'))
+            clean_hourly_data = [int(hd) for hd in clean_hourly_data]
+            data.append((date, daily_total, clean_hourly_data))
     return data
 
 
-def get_date(day):
-    date = datetime.datetime.strptime(day[0], '%d-%b-%Y')
-    print(f'Year: {date.year}')
-    print(f'Month: {date.month}')
-    print(f'Day: {date.day}')
-
-
-def get_year(day):
-    date = datetime.datetime.strptime(day[0], '%d-%b-%Y')
-    return date.year
-
-
-def get_month(day):
-    date = datetime.datetime.strptime(day[0], '%d-%b-%Y')
-    return date.month
-
-
-def get_day(day):
-    date = datetime.datetime.strptime(day[0], '%d-%b-%Y')
-    return date.day
-
-
-def average_daily_rainfall(file):
+def total_average_daily_rainfall(data):
     averages = []
-    for i in file:
-        daily_average = int(i[1])
-        averages.append(daily_average)
+    for i in data:
+        averages.append(i[1])
     total_average = sum(averages) / len(averages)
     return total_average
 
 
-def clean_data(file):
-    clean = []
-    for i in file:
-        cleani = [i[0]]
-        for a in i[1:]:
-            w = a.replace('-', '0')
-            cleani.append(w)
-        clean.append(cleani)
-    return clean
-
-
-def most_rain_day(file):
-    most_rain = file[0]
-    for i in file:
-        if int(i[1]) > int(most_rain[1]):
+def most_rain_day(data):
+    most_rain = data[0]
+    for i in data:
+        if i[1] > most_rain[1]:
             most_rain = i
-    print(f'Rainfall: {most_rain[1]}')
-    get_date(most_rain)
+    print(f'Date: {most_rain[0]}:\nRainfall: {most_rain[1]}')
 
 
-def get_biggest_year(file):
+def get_biggest_year(data):
     totals = {}
-    for i in file:
-        year = get_year(i)
-        if year in totals:
-            totals[year] = totals[year] + int(i[1])
+    for i in data:
+        if i[0] in totals:
+            totals[i[0]] = totals[i[0]] + i[1]
         else:
-            totals[year] = int(i[1])
+            totals[i[0]] = i[1]
     return max(totals.items(), key=operator.itemgetter(1))[0]
 
 
-#
-# def get_average_rainfall_of_month(file, month, year):
-#     total = []
-#     for i in file:
-#         if get_year(i) == int(year) and get_month(i) == int(month):
-#             total.append(int(i[1]))
-#     return sum(total)
+def get_years(data):
+    years = {datarow[0].year for datarow in data}
+    years = list(years)
+    years.sort()
+    return years
 
 
-def plot_rainfall_month(file, month):
-    years = {}
-    for i in file:
-        if get_month(i) == month:
-            if int(get_year(i)) in years:
-                years[int(get_year(i))] = years[int(get_year(i))] + i[1]
-            else:
-                years[int(get_year(i))] = i[i]
-    for i in
-        plt.plot()
+def rainfall_by_month_across_years(data, month):
+    years = get_years(data)
+    year_total = {}
+    for year in years:
+        year_total[year] = 0
+    for datarow in data:
+        if datarow[0].month == month:
+            year_total[datarow[0].year] += datarow[1]
+    totals = []
+    for year in years:
+        totals.append(year_total[year])
+    return (years, totals)
+
+
+def rainfall_whole(data):
+    days = []
+    rainfall = []
+    for datarow in data:
+        days.append(datarow[0])
+        rainfall.append(datarow[1])
+    return (days, rainfall)
+
+
+def get_historical_averages_day(data):
+    days = list(range(366))
+    totals = [0]*366
+    counts = [0]*366
+    print(min([datarow[0].timetuple().tm_yday for datarow in data]))
+    for datarow in data:
+        #print(datarow[0].timetuple().tm_yday)
+        doy = datarow[0].timetuple().tm_yday-1
+        totals[doy] += datarow[1]
+        counts[doy] += 1
+    #for i in range(366):
+    #    totals[i] /= counts[i]
+    return(days,totals)
 
 
 if __name__ == '__main__':
     mt_tabor = get_list_data('mt_tabor.rain.txt')
-    cleantabor = clean_data(mt_tabor)
-    print(get_average_rainfall_of_month(cleantabor, 1, 2016))
+    plot_data = get_historical_averages_day(mt_tabor)
+    plt.plot(plot_data[0], plot_data[1])
+    plt.show()
