@@ -48,10 +48,10 @@ def most_rain_day(data):
 def get_biggest_year(data):
     totals = {}
     for i in data:
-        if i[0] in totals:
-            totals[i[0]] = totals[i[0]] + i[1]
+        if i[0].year in totals:
+            totals[i[0].year] = totals[i[0].year] + i[1]
         else:
-            totals[i[0]] = i[1]
+            totals[i[0].year] = i[1]
     return max(totals.items(), key=operator.itemgetter(1))[0]
 
 
@@ -102,6 +102,4 @@ def get_historical_averages_day(data):
 
 if __name__ == '__main__':
     mt_tabor = get_list_data('mt_tabor.rain.txt')
-    plot_data = get_historical_averages_day(mt_tabor)
-    plt.plot(plot_data[0], plot_data[1])
-    plt.show()
+    print(get_biggest_year(mt_tabor))
